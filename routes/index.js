@@ -1,19 +1,21 @@
-const express       = require('express');
-const router        = express.Router();
-const mongoose      = require('mongoose');
-const Schema        = mongoose.Schema;
+const express           = require('express');
+const router            = express.Router();
+const activityRouter    = require('./activities');
+const statsRouter       = require('./stats');
 ////////////////////////////////////////////////////////////////////////////////
 
-//Set up Mongoose
-mongoose.connect('mongodb://127.0.0.1:27017/stats');
-mongoose.Promise = require('bluebird');
-
-//Schemas
+//Import specific routers
+router.use('/api/activities', activityRouter);
+router.use('/api/stats', statsRouter);
 
 //Routes
 router.get('/', (req, res) => {
-  res.send("Routes are connected!");
+  res.redirect('/api');
 });
+
+router.get('/api', (req, res) => {
+  res.status(200).send("API documentation!");
+})
 
 //Export router
 module.exports = router;
