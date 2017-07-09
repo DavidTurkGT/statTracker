@@ -1,16 +1,49 @@
 const express       = require('express');
 const router        = express.Router();
+const mongoose      = require('mongoose');
+mongoose.connect('mongodb://localhost:27017/stats');
+mongoose.Promise    = require('bluebird');
+const Schema        = mongoose.Schema;
 ////////////////////////////////////////////////////////////////////////////////
+//Schemas
+const activitySchema = new Schema({
+  name: { type: String, required: true, unique: true},
+  values: [{
+    type: Number,
+    default: 1
+  }]
+});
+activitySchema.virtual('link').get( function(){
+  return "/activities/"+this.id;
+})
+
+//Models
+const Activity = mongoose.model("Activity", activitySchema);
 
 //Routes
-router.get('/', (req, res) => {
+//TODO: add authentication
+router.get('/', async (req, res) => {
   //Show a list of all activities I am tracking, and links to their individual pages
-  res.status(200).send("Show a list of all activities I am tracking, and links to their individual pages");
+  let activities = await Activity.find()
+    .catch( (err) => res.status(500).send("Internal server error"));
+  res.setHeader('Content-Type','application/json');
+  res.status(200).json(activities);
 });
 
 router.post('/', (req, res) => {
   //Create a new activity for me to track.
-  res.status(200).send("Create a new activity for me to track.");
+  //TODO: validate data for a new acitivity
+  console.log("Body received: ", req.body);
+  let newActivity = new Activity({
+    name: req.body.name,
+    values: []
+  });
+  console.log("New activity created: ", newActivity);
+  console.log("Link to activity: ", newActivity.link);
+  newActivity.save().then( (newActivity) =>{
+    console.log("Activity saved: ", newActivity);
+    res.status(200).send("Create a new activity for me to track.");
+  }).catch( (err) => res.status(500).send("Internal server error!") );
 });
 
 router.get('/:id', (req, res) => {
