@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
   res.status(200).json(activities);
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   //Create a new activity for me to track.
   //TODO: validate data for a new acitivity
   console.log("Body received: ", req.body);
@@ -38,12 +38,9 @@ router.post('/', (req, res) => {
     name: req.body.name,
     values: []
   });
-  console.log("New activity created: ", newActivity);
-  console.log("Link to activity: ", newActivity.link);
-  newActivity.save().then( (newActivity) =>{
-    console.log("Activity saved: ", newActivity);
-    res.status(200).send("Create a new activity for me to track.");
-  }).catch( (err) => res.status(500).send("Internal server error!") );
+  await newActivity.save()
+    .catch( (err) => res.status(500).send("Internal server error"));
+  res.status(200).send("New activity: " + newActivity.name + " created");
 });
 
 router.get('/:id', (req, res) => {
