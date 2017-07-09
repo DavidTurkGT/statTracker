@@ -20,6 +20,10 @@ activitySchema.virtual('link').get( function(){
 //Models
 const Activity = mongoose.model("Activity", activitySchema);
 
+//Support Functions
+function error4040(res){
+}
+
 //Routes
 //TODO: add authentication
 router.get('/', async (req, res) => {
@@ -47,6 +51,7 @@ router.get('/:id', async (req, res) => {
   //Show information about one activity I am tracking, and give me the data I have recorded for that activity.
   let activity = await Activity.findById(req.params.id)
     .catch( (err) => res.status(404).send("Error: activity not found") );
+  if(!activity) res.status(404).send("Error: activity not found");
   res.setHeader('Content-Type', 'application/json');
   res.status(200).json(activity);
 });
@@ -56,9 +61,14 @@ router.put('/:id', (req, res) => {
   res.status(200).send("Update one activity I am tracking, changing attributes such as name or type. Does not allow for changing tracked data.");
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   //Delete one activity I am tracking. This should remove tracked data for that activity as well.
-  res.status(200).send("Delete one activity I am tracking. This should remove tracked data for that activity as well.");
+  let activity = await Activity.findById(req.params.id)
+    .catch( (err) => res.status(404).send("Error: activity not found") );
+  if(!activity) res.status(404).send("Error: acitivity not found");
+  activity.remove()
+  .then( (activity) => res.status(200).send("Activity " + activity.name + " deleted") )
+  .catch( (err) => res.status(500).send("Internal server error") );
 });
 
 router.post('/:id/stats', (req, res) => {
