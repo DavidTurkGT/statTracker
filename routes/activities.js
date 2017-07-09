@@ -43,9 +43,12 @@ router.post('/', async (req, res) => {
   res.status(200).send("New activity: " + newActivity.name + " created");
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   //Show information about one activity I am tracking, and give me the data I have recorded for that activity.
-  res.status(200).send("Show information about one activity I am tracking, and give me the data I have recorded for that activity.");
+  let activity = await Activity.findById(req.params.id)
+    .catch( (err) => res.status(404).send("Error: activity not found") );
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).json(activity);
 });
 
 router.put('/:id', (req, res) => {
