@@ -5,17 +5,12 @@ const statsRouter       = require('./stats');
 ////////////////////////////////////////////////////////////////////////////////
 
 //Import specific routers
-router.use('/api/activities', activityRouter);
-router.use('/api/stats', statsRouter);
+router.use('/api/', activityRouter);
 
 //Routes
 router.get('/', (req, res) => {
   res.redirect('/api');
 });
-
-router.get('/api', (req, res) => {
-  res.status(200).send("API documentation!");
-})
 
 //Export router
 module.exports = router;
