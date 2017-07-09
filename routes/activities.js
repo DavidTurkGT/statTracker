@@ -8,9 +8,10 @@ const Schema        = mongoose.Schema;
 //Schemas
 const activitySchema = new Schema({
   name: { type: String, required: true, unique: true},
+  statistic: { type: String, required: true},
   values: [{
-    type: Number,
-    default: 1
+    stat: { type: Number, default: 1},
+    date: { type: Date, default: new Date() }
   }]
 });
 activitySchema.virtual('link').get( function(){
@@ -19,10 +20,6 @@ activitySchema.virtual('link').get( function(){
 
 //Models
 const Activity = mongoose.model("Activity", activitySchema);
-
-//Support Functions
-function error4040(res){
-}
 
 //Routes
 //TODO: add authentication
@@ -81,9 +78,21 @@ router.delete('/:id', async (req, res) => {
   .catch( (err) => res.status(500).send("Internal server error") );
 });
 
-router.post('/:id/stats', (req, res) => {
-  //TODO: Add tracked data for a day. The data sent with this should include the day tracked. You can also override the data for a day already recorded.
-  res.status(200).send("Add tracked data for a day. The data sent with this should include the day tracked. You can also override the data for a day already recorded.");
+router.post('/:id/stats', async (req, res) => {
+  //Add tracked data for a day. The data sent with this should include the day tracked. You can also override the data for a day already recorded.
+  //TODO: body validation
+  let activity = await Activity.findById(req.params.id)
+    .catch( (err) => res.status(400).send("Error: bad ID") );
+  if(!activity) res.status(404).send("Error: no activity found");
+  //TODO: find if date already matches something in the array and update
+  let newStat = {
+    stat: req.body.stat,
+    date: new Date()
+  };
+  activity.values.push(newStat);
+  activity = await activity.save()
+    .catch( (err) => res.status(500).send("Internal server error") );
+  res.status(200).send("Successfully updated activity: " + activity.name + " with the statistic of: " + newStat.stat);
 });
 
 //Export router
