@@ -85,13 +85,23 @@ router.post('/:id/stats', async (req, res) => {
     .catch( (err) => res.status(400).send("Error: bad ID") );
   if(!activity) res.status(404).send("Error: no activity found");
   //TODO: find if date already matches something in the array and update
+  req.body.date = req.body.date ? new Date(req.body.date) : new Date();
   let newStat = {
     stat: req.body.stat,
     date: new Date()
   };
-  activity.values.push(newStat);
+  let match = false;
+  activity.values.every( (element, index, array) => {
+    if( element.date.getTime() === req.body.date.getTime() ){
+      array[index].stat = newStat.stat;
+      match = true;
+    }
+  });
+  if(!match){
+    activity.values.push(newStat);
+  }
   activity = await activity.save()
-    .catch( (err) => res.status(500).send("Internal server error") );
+  .catch( (err) => res.status(500).send("Internal server error") );
   res.status(200).send("Successfully updated activity: " + activity.name + " with the statistic of: " + newStat.stat);
 });
 
