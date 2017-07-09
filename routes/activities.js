@@ -80,11 +80,10 @@ router.delete('/:id', async (req, res) => {
 
 router.post('/:id/stats', async (req, res) => {
   //Add tracked data for a day. The data sent with this should include the day tracked. You can also override the data for a day already recorded.
-  //TODO: body validation
+  //TODO: body validation for posted stat
   let activity = await Activity.findById(req.params.id)
     .catch( (err) => res.status(400).send("Error: bad ID") );
   if(!activity) res.status(404).send("Error: no activity found");
-  //TODO: find if date already matches something in the array and update
   req.body.date = req.body.date ? new Date(req.body.date) : new Date();
   let newStat = {
     stat: req.body.stat,
