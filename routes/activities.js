@@ -37,6 +37,12 @@ function validateActivity (req, res, next){
 
 }
 
+function validateStat (req, res, next){
+  if(!req.body.stat) res.status(400).send("Invalid request body. Stat must not be empty");
+  else if( Number(req.body.stat) ) next();
+  else res.status(400).send("Invalid request body. Stat must be a number");
+}
+
 //Routes
 //TODO: add authentication
 router.get('/', (req, res) => {
@@ -79,13 +85,17 @@ router.put('/activities/:id', async (req, res) => {
     .catch( (err) => res.status(400).send("Error: bad ID") );
   if(!activity) res.status(404).send("Error: activity not found")
   let oldName = activity.name;
-  activity.name = req.body.name || oldName;
+  let oldStat = activity.statistic;
+  activity.name      = req.body.name || oldName;
+  activity.statistic = req.body.statistic || oldStat;
   activity = await activity.save()
     .catch( (err) => res.status(500).send("Internal server error") )
-  if(oldName === activity.name){
+  if(oldName === activity.name && oldStat === activity.statistic){
     res.status(304).send("No body sent. Nothing to update!");
   }
-  res.status(200).send("Successfully updated " + oldName + " to " + activity.name);
+  else{
+    res.status(200).send("Successfully updated " + oldName + " to " + activity.name);
+  }
 });
 
 router.delete('/activities/:id', async (req, res) => {
@@ -98,7 +108,7 @@ router.delete('/activities/:id', async (req, res) => {
   .catch( (err) => res.status(500).send("Internal server error") );
 });
 
-router.post('/activities/:id/stats', async (req, res) => {
+router.post('/activities/:id/stats', validateStat, async (req, res) => {
   //Add tracked data for a day. The data sent with this should include the day tracked. You can also override the data for a day already recorded.
   //TODO: body validation for posted stat
   let activity = await Activity.findById(req.params.id)
