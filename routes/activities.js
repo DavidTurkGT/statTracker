@@ -21,6 +21,22 @@ activitySchema.virtual('link').get( function(){
 //Models
 const Activity = mongoose.model("Activity", activitySchema);
 
+//Middleware
+function validateActivity (req, res, next){
+  req.checkBody("name","Activity name cannot be empty").notEmpty();
+  req.checkBody("statistic","Activity statistic cannot be empty").notEmpty();
+
+  let errors = req.validationErrors();
+  if(errors){
+    let msgs = [];
+    errors.forEach( (err) => msgs.push(err.msg + "\n") );
+    console.log("Messages: ", msgs);
+    res.status(400).send("Invalid request body: \n" + msgs);
+  }
+  else next()
+
+}
+
 //Routes
 //TODO: add authentication
 router.get('/', (req, res) => {
@@ -35,12 +51,12 @@ router.get('/activities', async (req, res) => {
   res.status(200).json(activities);
 });
 
-router.post('/activites', async (req, res) => {
+router.post('/activities', validateActivity, async (req, res) => {
   //Create a new activity for me to track.
-  //TODO: validate data for a new acitivity
   console.log("Body received: ", req.body);
   let newActivity = new Activity({
     name: req.body.name,
+    statistic: req.body.statistic,
     values: []
   });
   await newActivity.save()
@@ -109,7 +125,7 @@ router.post('/activities/:id/stats', async (req, res) => {
 });
 
 router.delete('/stats/:id', async (req, res) => {
-  //TODO: Remove tracked data for a day.
+  //Remove tracked data for a day.
   let activity = await Activity.findOne({
     values: {$elemMatch: { _id: req.params.id}}
   })
