@@ -3,6 +3,7 @@ const bodyParser      = require('body-parser');
 const validator       = require('express-validator');
 const morgan          = require('morgan');
 const router          = require('./routes');
+
 ////////////////////////////////////////////////////////////////////////////////
 const app = express();
 
@@ -13,6 +14,8 @@ app.use( validator() );
 
 //Morgan
 app.use( morgan('dev') );
+
+
 
 //Set the port
 app.set('port', (process.env.PORT || 3000) );
