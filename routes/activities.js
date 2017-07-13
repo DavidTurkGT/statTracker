@@ -10,7 +10,6 @@ const BasicStrategy   = require('passport-http').BasicStrategy;
 //passport//Passport
 passport.use(new BasicStrategy(
   (username, password, done) =>{
-    console.log("Authenticating!");
     if(username !== 'david' || password !== 'cornbread') {
       return done(null, false, {message: "Invalid username/password"});
     }
@@ -45,7 +44,6 @@ function validateActivity (req, res, next){
   if(errors){
     let msgs = [];
     errors.forEach( (err) => msgs.push(err.msg + "\n") );
-    console.log("Messages: ", msgs);
     res.status(400).send("Invalid request body: \n" + msgs);
   }
   else next()
@@ -59,8 +57,6 @@ function validateStat (req, res, next){
 }
 
 function passportLog (req, res, next){
-  console.log("Username: ", req.username);
-  console.log("Password: ", req.password);
   next();
 }
 
@@ -71,126 +67,170 @@ router.get('/', (req, res) => {
 
 router.get('/activities',
   passport.authenticate('basic', { session: false }),
-  async (req, res) => {
+  (req, res) => {
   //Show a list of all activities I am tracking, and links to their individual pages
-  console.log("You are in the post!");
-  let activities = await Activity.find()
-    .catch( (err) => res.status(500).send("Internal server error"));
-  res.setHeader('Content-Type','application/json');
-  res.status(200).json(activities);
+  // let activities = await Activity.find()
+  //   .catch( (err) => res.status(500).send("Internal server error"));
+  // res.setHeader('Content-Type','application/json');
+  // res.status(200).json(activities);
+  Activity.find()
+  .catch( (err) => res.status(500).send("Internal server error"))
+  .then( (activities) => {
+    res.setHeader('Content-Type','application/json');
+    res.status(200).json(activities);
+  })
 });
 
 router.post('/activities',
   passport.authenticate('basic', { session: false }),
   validateActivity,
-  async (req, res) => {
+  (req, res) => {
   //Create a new activity for me to track.
-  console.log("Body received: ", req.body);
   let newActivity = new Activity({
     name: req.body.name,
     statistic: req.body.statistic,
     values: []
   });
-  await newActivity.save()
-    .catch( (err) => res.status(500).send("Internal server error"));
-  res.status(200).send("New activity: " + newActivity.name + " created");
+  // await newActivity.save()
+  //   .catch( (err) => res.status(500).send("Internal server error"));
+  // res.status(200).send("New activity: " + newActivity.name + " created");
+  newActivity.save()
+  .catch( (err) => res.status(500).send("Internal server error"))
+  .then( (newActivity) => {
+    res.status(200).send("New activity: " + newActivity.name + " created");
+  })
 });
 
 router.get('/activities/:id',
   passport.authenticate('basic', { session: false }),
-  async (req, res) => {
+  (req, res) => {
   //Show information about one activity I am tracking, and give me the data I have recorded for that activity.
-  let activity = await Activity.findById(req.params.id)
-    .catch( (err) => res.status(400).send("Error: bad ID") );
-  if(!activity) res.status(404).send("Error: activity not found");
-  res.setHeader('Content-Type', 'application/json');
-  res.status(200).json(activity);
+  // let activity = await Activity.findById(req.params.id)
+  //   .catch( (err) => res.status(400).send("Error: bad ID") );
+  // if(!activity) res.status(404).send("Error: activity not found");
+  // res.setHeader('Content-Type', 'application/json');
+  // res.status(200).json(activity);
+
+  Activity.findById(req.params.id)
+  .catch( (err) => res.status(500).send(err))
+  .then( (activity) => {
+    if(!activity){
+      res.status(404).send("Error: activity not found");
+    }
+    else{
+      res.status(200).json(activity);
+    }
+  });
 });
 
 router.put('/activities/:id',
   passport.authenticate('basic', { session: false }),
-  async (req, res) => {
+  (req, res) => {
   //Update one activity I am tracking, changing attributes such as name or type. Does not allow for changing tracked data.
-  let activity = await Activity.findById(req.params.id)
-    .catch( (err) => res.status(400).send("Error: bad ID") );
-  if(!activity) res.status(404).send("Error: activity not found")
-  let oldName = activity.name;
-  let oldStat = activity.statistic;
-  activity.name      = req.body.name || oldName;
-  activity.statistic = req.body.statistic || oldStat;
-  activity = await activity.save()
-    .catch( (err) => res.status(500).send("Internal server error") )
-  if(oldName === activity.name && oldStat === activity.statistic){
-    res.status(304).send("No body sent. Nothing to update!");
-  }
-  else{
-    res.status(200).send("Successfully updated " + oldName + " to " + activity.name);
-  }
+  // let activity = await Activity.findById(req.params.id)
+  //   .catch( (err) => res.status(400).send("Error: bad ID") );
+  // if(!activity) res.status(404).send("Error: activity not found")
+  // let oldName = activity.name;
+  // let oldStat = activity.statistic;
+  // activity.name      = req.body.name || oldName;
+  // activity.statistic = req.body.statistic || oldStat;
+  // activity = await activity.save()
+  //   .catch( (err) => res.status(500).send("Internal server error") )
+  // if(oldName === activity.name && oldStat === activity.statistic){
+  //   res.status(304).send("No body sent. Nothing to update!");
+  // }
+  // else{
+  //   res.status(200).send("Successfully updated " + oldName + " to " + activity.name);
+  // }
+
+  Activity.findById(req.params.id)
+  .catch( (err) => res.status(400).send("Error: bad ID") )
+  .then( (activity) => {
+    if(!activity) res.status(404).send("Error: activity not found")
+    let oldName = activity.name;
+    let oldStat = activity.statistic;
+    activity.name      = req.body.name || oldName;
+    activity.statistic = req.body.statistic || oldStat;
+    activity.save()
+    .catch( (err) => res.status(500).send("Internal server error"))
+    .then( (activity) => {
+      if(oldName === activity.name && oldStat === activity.statistic){
+        res.status(304).send("No body sent. Nothing to update!");
+      }
+      else{
+        res.status(200).send("Successfully updated " + oldName + " to " + activity.name);
+      }
+    });
+  });
 });
 
 router.delete('/activities/:id',
   passport.authenticate('basic', { session: false }),
-  async (req, res) => {
+  (req, res) => {
   //Delete one activity I am tracking. This should remove tracked data for that activity as well.
-  let activity = await Activity.findById(req.params.id)
-    .catch( (err) => res.status(400).send("Error: bad ID") );
-  if(!activity) res.status(404).send("Error: acitivity not found");
-  activity.remove()
-  .then( (activity) => res.status(200).send("Activity " + activity.name + " deleted") )
-  .catch( (err) => res.status(500).send("Internal server error") );
+  Activity.findById(req.params.id)
+  .catch( (err) => res.status(400).send(err))
+  .then( (activity) => {
+    if(!activity) res.status(404).send("Error: acitivity not found");
+    activity.remove()
+    .then( (activity) => res.status(200).send("Activity " + activity.name + " deleted") )
+    .catch( (err) => res.status(500).send("Internal server error") );
+  });
 });
 
 router.post('/activities/:id/stats',
   passport.authenticate('basic', { session: false }),
   validateStat,
-  async (req, res) => {
+  (req, res) => {
   //Add tracked data for a day. The data sent with this should include the day tracked. You can also override the data for a day already recorded.
-  let activity = await Activity.findById(req.params.id)
-    .catch( (err) => res.status(400).send("Error: bad ID") );
-  if(!activity) res.status(404).send("Error: no activity found");
-  req.body.date = req.body.date ? new Date(req.body.date) : new Date();
-  let newStat = {
-    stat: req.body.stat,
-    date: new Date()
-  };
-  let match = false;
-  activity.values.every( (element, index, array) => {
-    if( element.date.getTime() === req.body.date.getTime() ){
-      array[index].stat = newStat.stat;
-      match = true;
+  Activity.findById(req.params.id)
+  .catch( (err) => res.status(400).send("Error: bad ID") )
+  .then( (activity) => {
+    if(!activity) res.status(404).send("Error: no activity found");
+    req.body.date = req.body.date ? new Date(req.body.date) : new Date();
+    let newStat = {
+      stat: req.body.stat,
+      date: new Date()
+    };
+    let match = false;
+    activity.values.every( (element, index, array) => {
+      if( element.date.getTime() === req.body.date.getTime() ){
+        array[index].stat = newStat.stat;
+        match = true;
+      }
+    });
+    if(!match){
+      activity.values.push(newStat);
     }
+    activity.save()
+    .catch( (err) => res.status(500).send("Internal server error") )
+    .then( (activity) => {
+      res.status(200).send("Successfully updated activity: " + activity.name + " with the statistic of: " + newStat.stat);
+    });
   });
-  if(!match){
-    activity.values.push(newStat);
-  }
-  activity = await activity.save()
-  .catch( (err) => res.status(500).send("Internal server error") );
-  res.status(200).send("Successfully updated activity: " + activity.name + " with the statistic of: " + newStat.stat);
 });
 
 router.delete('/stats/:id',
   passport.authenticate('basic', { session: false }),
   async (req, res) => {
   //Remove tracked data for a day.
-  let activity = await Activity.findOne({
+  Activity.findOne({
     values: {$elemMatch: { _id: req.params.id}}
   })
-  .catch( (err) => { res.status(400).send("Error: bad ID")});
-  console.log("Activity found: ", activity);
-  if(!activity) res.status(404).send("Error: no stat match")
-  for(let i = 0; i < activity.values.length; i++){
-    console.log("Value id: ", activity.values[i].id);
-    console.log("ID received: ", req.params.id);
-    if( activity.values[i].id === req.params.id){
-      console.log("Match found!");
-      let gone = activity.values.splice(i,1);
-      console.log("Item removed: ", gone);
+  .catch( (err) => { res.status(400).send("Error: bad ID")})
+  .then( (activity) => {
+    if(!activity) res.status(404).send("Error: no stat match")
+    for(let i = 0; i < activity.values.length; i++){
+      if( activity.values[i].id === req.params.id){
+        let gone = activity.values.splice(i,1);
+      }
     }
-  }
-  console.log("Values now: ", activity.values);
-  activity = await activity.save()
-    .catch( (err) => res.status(500).send("Internal server error"));
-  res.status(200).send("Successfully removed stat with the id: " + req.params.id);
+    activity.save()
+    .catch( (err) => res.status(500).send("Internal server error"))
+    .then( (activity) => {
+      res.status(200).send("Successfully removed stat with the id: " + req.params.id);
+    })
+  })
 });
 
 //Export router
